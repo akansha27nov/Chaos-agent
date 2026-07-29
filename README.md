@@ -4,7 +4,7 @@ A modular LangChain and LangGraph agent that processes chaotic appliance complai
 
 ## Project Structure
 ```
-LAB-Chaos-agent/
+Chaos-agent/
 ├── normalobjects_tools.py        # Shared tool registry (consult_eleven, demogorgon, records, spells, party wisdom)
 ├── normalobjects_langchain.py    # Gradio chat UI wrapper with memory (MemorySaver) and performance metrics
 ├── normalobjects_stretch.py      # Stretch CLI script for inspectable traces and guardrail validation
