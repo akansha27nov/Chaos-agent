@@ -92,12 +92,12 @@ system_prompt = (
     "Synthesize the tool's output into a highly creative, slightly unhinged final response."
 )
 
-# 4. Construct Agent using modern v1.0 create_agent
+# 4. create agent
 agent = create_agent(
     model=setup_model, 
     tools=tools, 
     system_prompt=system_prompt,
-    debug=True 
+    debug=True # to check the detailed execution trace
 )
 
 # ==========================================
