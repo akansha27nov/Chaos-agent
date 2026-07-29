@@ -7,9 +7,14 @@ from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import MemorySaver
 
 # Load environment variables from .env
 load_dotenv()
+
+# 1. Initialize the LLM
+setup_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 # ==========================================
 # Step 2: Create Creative Tools
@@ -70,15 +75,21 @@ def gather_party_wisdom(question: str) -> str:
             return response
     return "Party Huddle: The gang gathers around the walkie-talkies to brainstorm a workaround."
 
+@tool
+def consult_eleven(question:str) -> str:
+    """Consult Eleven regarding psychic disturbances, remote viewing, or emotional states."""
+    # Extension Feature: Uses an internal LLM call for a dynamic, context-aware response
+    dynamic_prompt = f"You are Eleven from Stranger Things. Answer this question/complaint psychically and briefly: '{question}'"
+    response = setup_model.invoke(dynamic_prompt)
+    return f"Eleven (Remote Viewing Output): {response.content}"
+    
 # ==========================================
 # Step 3: Create Agent with Tools
 # ==========================================
 
-# 1. Initialize the LLM
-setup_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-
 # 2. Package Tools
 tools = [
+    consult_eleven,
     consult_demogorgon,
     check_hawkins_records,
     cast_interdimensional_spell,
@@ -92,11 +103,20 @@ system_prompt = (
     "Synthesize the tool's output into a highly creative, slightly unhinged final response."
 )
 
+system_prompt_1 = (
+    "You are a chaotic but helpful incident response agent in the town of Hawkins. "
+    "Use tools when investigating issues, and maintain continuity using conversation memory."
+)
+
+# Initialize short-term memory checkpointer for multi-turn threads
+memory = MemorySaver()
+
 # 4. create agent
 agent = create_agent(
     model=setup_model, 
     tools=tools, 
-    system_prompt=system_prompt
+    system_prompt=system_prompt_1,
+    checkpointer=memory
 )
 
 # ==========================================
@@ -106,7 +126,9 @@ if __name__ == "__main__":
     print("\n--- Testing Agent Execution ---")
     test_complaint = "The electricity in my house is flickering and my compass is pointing the wrong way!"
     print(f"INPUT: {test_complaint}\n")
-    result = agent.invoke({"messages": [{"role": "user", "content": test_complaint}]})
+    # Add config
+    config = {"configurable": {"thread_id": "lab-proof-session"}}
+    result = agent.invoke({"messages": [{"role": "user", "content": test_complaint}]}, config)
     
     print("==========================================")
     
@@ -120,5 +142,23 @@ if __name__ == "__main__":
         elif msg.type == "ai" and not msg.tool_calls:
             print(f"\nBUILD (Final Output):\n{msg.content}")
     print("==========================================\n")
+    
+    print("\n--- Extension Turn 1: Initial Complaint ---")
+    q1 = "My house lights are flickering constantly!"
+    print(f"User: {q1}")
+    res1 = agent.invoke(
+        {"messages": [{"role": "user", "content": q1}]}, 
+        config
+    )
+    print(f"Agent:\n{res1['messages'][-1].content}\n")
+    
+    print("--- Extension Turn 2: Follow-up using Memory & New Dynamic Tool ---")
+    q2 = "Can you ask Eleven what she senses about that issue?"
+    print(f"User: {q2}")
+    res2 = agent.invoke(
+            {"messages": [{"role": "user", "content": q2}]}, 
+            config
+        )
+    print(f"Agent:\n{res2['messages'][-1].content}\n")
     
 
