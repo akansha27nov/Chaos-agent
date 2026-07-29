@@ -2,33 +2,13 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
-from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
+from normalobjects_tools import consult_eleven, check_hawkins_records
 
 load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3) # Lower temp for better guardrail adherence
-
-# ==========================================
-# THEMED TOOLS
-# ==========================================
-@tool
-def consult_eleven(question: str) -> str:
-    """Consult Eleven regarding psychic disturbances, remote viewing, or emotional states."""
-    return f"Eleven (Remote Viewing Output): I feel static and a heavy cold presence near the school."
-
-@tool
-def check_hawkins_records(query: str) -> str:
-    """Search Hawkins municipal and lab historical records for specific topics."""
-    records = {
-        "portal": "Record #101: Gate activity spiked near the quarry in 1983.",
-        "electricity": "Record #412: Unexplained magnetic and electrical fluctuations reported town-wide."
-    }
-    for key, record in records.items():
-        if key in query.lower():
-            return record
-    return "Hawkins Records: No matching archive found."
 
 tools = [consult_eleven, check_hawkins_records]
 
@@ -42,7 +22,7 @@ memory = MemorySaver()
 agent = create_agent(model=llm, tools=tools, system_prompt=system_prompt, checkpointer=memory)
 
 # ==========================================
-# STRETCH: GUARDRAIL & TRACE VIEW WRAPPER
+# Stretch: Guardrail & Trace View Wrapper
 # ==========================================
 def run_with_guardrail_and_trace(query: str):
     config = {"configurable": {"thread_id": "stretch-session"}}

@@ -28,7 +28,7 @@ Would you like me to cast that enchanting spell for you? Just say the word!*
 
 ---
 
-## 4. AI Reviewer Output (Prompt Discipline)
+## 4. Output (Prompt Discipline)
 
 **Three Grounding Risks:**
 1. *System prompt encourages "unhinged" responses, which actively degrades factual adherence to the tool payload.*
@@ -44,3 +44,11 @@ Remove the "highly creative" instruction from the system prompt if strict ground
 
 **Verification:**
 The final response is tied to the source via the specific detail of `Record #412: Unexplained magnetic and electrical fluctuations reported town-wide`, which originated directly from the tool's hardcoded dictionary.
+
+## 5. Extension Activities & Stretch Implementation Checklist
+
+* **Additional Themed Tools:** Added `consult_eleven` utilizing dynamic inner LLM calls for psychic remote-viewing responses.
+* **Conversation Memory:** Integrated `MemorySaver` across chat threads to track state and reference prior turns.
+* **Web Interface:** Built a stylized terminal UI via Gradio (`normalobjects_langchain.py`) logging real-time execution speeds and tool efficiency metrics.
+* **Performance & Efficiency Tracking:** Monitored tool-call routing efficiency and response durations per execution thread.
+* **Optional Stretch (Guardrails & Trace View):** Built strict verification layers to ensure factual adherence to tool outputs.
