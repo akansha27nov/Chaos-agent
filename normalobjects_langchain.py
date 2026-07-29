@@ -1,13 +1,15 @@
 import os
 import random
+import time
 from dotenv import load_dotenv
 from typing import List, Dict
 
+import gradio as gr
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 
 # Load environment variables from .env
@@ -120,45 +122,46 @@ agent = create_agent(
 )
 
 # ==========================================
-# Agent Validation
+# PERFORMANCE METRICS WRAPPER & CHAT HANDLER
 # ==========================================
-if __name__ == "__main__":
-    print("\n--- Testing Agent Execution ---")
-    test_complaint = "The electricity in my house is flickering and my compass is pointing the wrong way!"
-    print(f"INPUT: {test_complaint}\n")
-    # Add config
-    config = {"configurable": {"thread_id": "lab-proof-session"}}
-    result = agent.invoke({"messages": [{"role": "user", "content": test_complaint}]}, config)
+def run_agent_with_metrics(user_message, history):
+    config = {"configurable": {"thread_id": "gradio-ui-session"}}
     
-    print("==========================================")
+    # Start performance timer
+    start_time = time.time()
     
+    # Invoke agent graph
+    result = agent.invoke({"messages": [HumanMessage(content=user_message)]}, config)
+    
+    # End performance timer
+    duration = time.time() - start_time
+    
+    # Analyze tool usage efficiency from message history
+    tools_called = []
     for msg in result["messages"]:
-        if msg.type == "human":
-            print(f"INPUT (Query): {msg.content}")
-        elif msg.type == "ai" and msg.tool_calls:
-            print(f"DECIDE (Tool Call): {msg.tool_calls[0]['name']} | Args: {msg.tool_calls[0]['args']}")
-        elif msg.type == "tool":
-            print(f"VERIFY (Tool Evidence): {msg.content}")
-        elif msg.type == "ai" and not msg.tool_calls:
-            print(f"\nBUILD (Final Output):\n{msg.content}")
-    print("==========================================\n")
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            for tc in msg.tool_calls:
+                tools_called.append(tc['name'])
+                
+    ai_response = result["messages"][-1].content
     
-    print("\n--- Extension Turn 1: Initial Complaint ---")
-    q1 = "My house lights are flickering constantly!"
-    print(f"User: {q1}")
-    res1 = agent.invoke(
-        {"messages": [{"role": "user", "content": q1}]}, 
-        config
-    )
-    print(f"Agent:\n{res1['messages'][-1].content}\n")
+    # Format a performance metrics badge to append or log
+    metrics_info = f"\n\n*(Performance: {duration:.2f}s | Tools Used: {tools_called if tools_called else 'None'})*"
     
-    print("--- Extension Turn 2: Follow-up using Memory & New Dynamic Tool ---")
-    q2 = "Can you ask Eleven what she senses about that issue?"
-    print(f"User: {q2}")
-    res2 = agent.invoke(
-            {"messages": [{"role": "user", "content": q2}]}, 
-            config
-        )
-    print(f"Agent:\n{res2['messages'][-1].content}\n")
-    
+    return ai_response + metrics_info
+
+# ==========================================
+# GRADIO WEB INTERFACE
+# ==========================================
+demo = gr.ChatInterface(
+    fn=run_agent_with_metrics,
+    title="🚨 Hawkins Incident Response & Chaos Agent",
+    description="Ask complaints about Hawkins, consult Eleven or the Demogorgon, and test memory persistence across turns. Performance metrics are logged per message.",
+    textbox=gr.Textbox(placeholder="E.g., My house lights are flickering! What should I do?", container=False, scale=7),
+    theme="soft",
+)
+
+if __name__ == "__main__":
+    print("Launching Gradio interface locally...")
+    demo.launch()
 
