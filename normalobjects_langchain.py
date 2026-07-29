@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import List, Dict
 
 from langchain_openai import ChatOpenAI
-from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
@@ -71,13 +71,45 @@ def gather_party_wisdom(question: str) -> str:
     return "Party Huddle: The gang gathers around the walkie-talkies to brainstorm a workaround."
 
 # ==========================================
-# TOOL VALIDATION
+# Step 3: Create Agent with Tools
+# ==========================================
+
+# 1. Initialize the LLM
+setup_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+
+# 2. Package Tools
+tools = [
+    consult_demogorgon,
+    check_hawkins_records,
+    cast_interdimensional_spell,
+    gather_party_wisdom
+]
+
+# 3. Create System Prompt 
+system_prompt = (
+    "You are a chaotic but helpful incident response agent in the town of Hawkins. "
+    "When handling a complaint, you must use at least one tool to investigate the issue or find a solution. "
+    "Synthesize the tool's output into a highly creative, slightly unhinged final response."
+)
+
+# 4. Construct Agent using modern v1.0 create_agent
+agent = create_agent(
+    model=setup_model, 
+    tools=tools, 
+    system_prompt=system_prompt,
+    debug=True 
+)
+
+# ==========================================
+# Agent Validation
 # ==========================================
 if __name__ == "__main__":
-    print("--- Validating Tool Signatures & Output Types ---")
-    print("1. Demogorgon Tool:", consult_demogorgon.invoke({"complaint": "The lights are flickering"}))
-    print("2. Hawkins Records Tool:", check_hawkins_records.invoke({"query": "Check portal records"}))
-    print("3. Spell Casting Tool:\n", cast_interdimensional_spell.invoke({"problem": "Broken elevator", "creativity_level": "high"}))
-    print("4. Party Wisdom Tool:", gather_party_wisdom.invoke({"question": "Are there monsters outside?"}))
-    print("--- All Chunk 1 Tools Validated Successfully ---")
+    print("\n--- Testing Agent Execution ---")
+    test_complaint = "The electricity in my house is flickering and my compass is pointing the wrong way!"
+    print(f"INPUT: {test_complaint}\n")
+    result = agent.invoke({"messages": [{"role": "user", "content": test_complaint}]})
+    
+    print("\n--- Final Agent Output ---")
+    print(result["messages"][-1].content)
+
 
