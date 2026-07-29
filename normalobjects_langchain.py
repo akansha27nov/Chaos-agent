@@ -96,8 +96,7 @@ system_prompt = (
 agent = create_agent(
     model=setup_model, 
     tools=tools, 
-    system_prompt=system_prompt,
-    debug=True # to check the detailed execution trace
+    system_prompt=system_prompt
 )
 
 # ==========================================
@@ -109,7 +108,17 @@ if __name__ == "__main__":
     print(f"INPUT: {test_complaint}\n")
     result = agent.invoke({"messages": [{"role": "user", "content": test_complaint}]})
     
-    print("\n--- Final Agent Output ---")
-    print(result["messages"][-1].content)
-
+    print("==========================================")
+    
+    for msg in result["messages"]:
+        if msg.type == "human":
+            print(f"INPUT (Query): {msg.content}")
+        elif msg.type == "ai" and msg.tool_calls:
+            print(f"DECIDE (Tool Call): {msg.tool_calls[0]['name']} | Args: {msg.tool_calls[0]['args']}")
+        elif msg.type == "tool":
+            print(f"VERIFY (Tool Evidence): {msg.content}")
+        elif msg.type == "ai" and not msg.tool_calls:
+            print(f"\nBUILD (Final Output):\n{msg.content}")
+    print("==========================================\n")
+    
 
