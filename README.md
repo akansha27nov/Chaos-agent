@@ -1,4 +1,4 @@
-# Hawkins Incident Response & Chaos Agent — README
+# Hawkins Incident Response & Chaos Agent
 
 A modular LangChain and LangGraph agent that processes chaotic appliance complaints through a Stranger Things theme, featuring shared tool management, conversation memory, a Gradio chat interface, and a dedicated guardrail trace validation workflow.
 
